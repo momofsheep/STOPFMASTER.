@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StopfMaster</title>
+    
+    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22StopfMaster%22,%22short_name%22:%22StopfMaster%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%23000000%22,%22theme_color%22:%22%23000000%22,%22icons%22:[{%22src%22:%22f408d130-3424-4130-be69-40cc86c69311-1_all_25795.png%22,%22sizes%22:%22192x192%22,%22type%22:%22image/png%22},{%22src%22:%22f408d130-3424-4130-be69-40cc86c69311-1_all_25795.png%22,%22sizes%22:%22512x512%22,%22type%22:%22image/png%22}]}">
+    
+    <link rel="icon" type="image/png" href="f408d130-3424-4130-be69-40cc86c69311-1_all_25795.png">
+    <link rel="apple-touch-icon" href="f408d130-3424-4130-be69-40cc86c69311-1_all_25795.png">
+    <meta name="apple-mobile-web-app-title" content="StopfMaster">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* --- CYBERPUNK DARK MODE DESIGN --- */
+        :root {
+            --bg-color: #000000;
+            --card-bg: #121212;
+            --card-inner: #1E1E1E;
+            --neon-green: #39FF14;
+            --neon-green-glow: rgba(57, 255, 20, 0.3);
+            --neon-red: #ff3333;
+            --text-main: #FFFFFF;
+            --text-muted: #888888;
+            --border-color: #2A2A2A;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding-bottom: 90px;
+        }
+
+        header {
+            background-color: var(--card-bg);
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+        }
+
+        .logo span {
+            color: var(--neon-green);
+            text-shadow: 0 0 10px var(--neon-green-glow);
+        }
+
+        .view {
+            display: none;
+            padding: 20px;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            font-size: 22px;
+            margin-bottom: 20px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        h3 {
+            font-size: 16px;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .big-number {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--neon-green);
+            text-shadow: 0 0 15px var(--neon-green-glow);
+            margin: 5px 0;
+        }
+
+        .sub-text {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        input, select {
+            width: 100%;
+            background-color: var(--card-inner);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 14px;
+            color: var(--text-main);
+            font-size: 16px;
+            outline: none;
+            transition: border 0.2s;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--neon-green);
+            box-shadow: 0 0 8px var(--neon-green-glow);
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: linear-gradient(135deg, #00E676, var(--neon-green));
+            color: #000000;
+            border: none;
+            border-radius: 12px;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 15px var(--neon-green-glow);
+            transition: transform 0.1s;
+            margin-top: 10px;
+        }
+
+        .btn-submit:active {
+            transform: scale(0.98);
+        }
+
+        .packung-item {
+            background-color: var(--card-inner);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid var(--neon-green);
+        }
+
+        .status-warn {
+            color: var(--neon-red) !important;
+            text-shadow: none !important;
+        }
+
+        nav {
+            background-color: var(--card-bg);
+            border-top: 1px solid var(--border-color);
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            z-index: 100;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--text-muted);
+            background: none;
+            border: none;
+            font-size: 11px;
+            cursor: pointer;
+            width: 25%;
+        }
+
+        .nav-item i {
+            font-size: 18px;
+            margin-bottom: 4px;
+            transition: color 0.2s;
+        }
+
+        .nav-item.active {
+            color: var(--neon-green);
+        }
+
+        .nav-item.active i {
+            text-shadow: 0 0 10px var(--neon-green-glow);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">STOPF<span>MASTER</span></div>
+    </header>
+
+    <main id="view-uebersicht" class="view active">
+        <h2>Dashboard</h2>
+        
+        <div class="card" style="border-color: var(--neon-green); box-shadow: 0 0 10px rgba(57, 255, 20, 0.1);">
+            <h3>Schnell-Erfassung</h3>
+            <form id="form-dash-packung">
+                <div class="form-group">
+                    <label for="dash-input-anzahl">Menge gestopft (Stück)</label>
+                    <input type="number" id="dash-input-anzahl" inputmode="numeric" pattern="[0-9]*" placeholder="Zahl manuell eingeben..." required>
+                </div>
+                <div class="grid-2" style="margin-bottom: 0;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="dash-input-status">Status</label>
+                        <select id="dash-input-status">
+                            <option value="Geschlossen">Geschlossen</option>
+                            <option value="Offen">Offen</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-submit" style="margin-top: 21px; padding: 12px; font-size: 14px;">Speichern</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="grid-2">
+            <div class="card">
+                <span class="sub-text">Total Gestopft</span>
+                <div id="dash-gesamt" class="big-number">0</div>
+                <span class="sub-text">Zigaretten</span>
+            </div>
+            <div class="card" style="border-color: rgba(57, 255, 20, 0.4);">
+                <span class="sub-text" style="color: var(--neon-green);">Ersparnis</span>
+                <div id="dash-ersparnis" class="big-number" style="color: #fff; font-size: 26px; padding: 4px 0;">0,00 €</div>
+                <span class="sub-text">Geld gespart</span>
+            </div>
+        </div>
+
+        <h3>Aktueller Vorrat</h3>
+        <div class="grid-2">
+            <div class="card">
+                <span class="sub-text">Tabak Rest</span>
+                <div id="dash-tabak" class="big-number" style="color: #fff;">0g</div>
+                <span class="sub-text" id="dash-tabak-status">Bereit</span>
+            </div>
+            <div class="card">
+                <span class="sub-text">Hülsen Rest</span>
+                <div id="dash-huelsen" class="big-number">0</div>
+                <span class="sub-text" id="dash-huelsen-status">Genug da</span>
+            </div>
+        </div>
+
+        <div class="card" style="background-color: var(--card-inner);">
+            <span class="sub-text">Letzte Aktivität</span>
+            <div id="dash-letzte-aktivitaet" style="font-weight: bold; margin-top: 5px; font-size: 15px;">Noch keine Einträge</div>
+        </div>
+    </main>
+
+    <main id="view-erfassen" class="view">
+        <h2>Zeit-Eintrag anpassen</h2>
+        <div class="card">
+            <p class="sub-text" style="margin-bottom: 15px;">Hier kannst du das Datum und die Uhrzeit der letzten erfassten Produktion nachträglich manuell verändern.</p>
+            <form id="form-zeit-korrektur">
+                <div class="form-group">
+                    <label for="input-datetime">Datum & Uhrzeit (Manuell veränderbar)</label>
+                    <input type="datetime-local" id="input-datetime" required>
+                </div>
+                <button type="submit" class="btn-submit">Zeitpunkt aktualisieren</button>
+            </form>
+        </div>
+    </main>
+
+    <main id="view-bearbeiten" class="view">
+        <h2>Geschlossene Packungen bearbeiten</h2>
+        <div id="packungs-liste">
+            </div>
+    </main>
+
+    <main id="view-lager" class="view">
+        <h2>Lager & Einkauf Erfassen</h2>
+        
+        <div class="card">
+            <h3>Volumen Tabak Packung</h3>
+            <form id="form-tabak-lager">
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Marke</label>
+                        <input type="text" id="lager-tabak-marke" value="Mein Tabak">
+                    </div>
+                    <div class="form-group">
+                        <label>Gewicht (g)</label>
+                        <input type="number" id="lager-tabak-gewicht" value="150" inputmode="numeric">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Preis der Dose (€)</label>
+                    <input type="number" step="0.01" id="lager-tabak-preis" value="30.00" inputmode="decimal">
+                </div>
+                <button type="button" class="btn-submit" onclick="saveTabakLager()" style="padding: 10px; font-size: 14px;">Tabak aktualisieren</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3>Leerhülsen Box</h3>
+            <form id="form-huelsen-lager">
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Anzahl in Box</label>
+                        <input type="number" id="lager-huelsen-anzahl" value="200" inputmode="numeric">
+                    </div>
+                    <div class="form-group">
+                        <label>Preis Box (€)</label>
+                        <input type="number" step="0.01" id="lager-huelsen-preis" value="2.00" inputmode="decimal">
+                    </div>
+                </div>
+                <button type="button" class="btn-submit" onclick="saveHuelsenLager()" style="padding: 10px; font-size: 14px;">Hülsen aktualisieren</button>
+            </form>
+        </div>
+    </main>
+
+    <nav>
+        <button class="nav-item active" onclick="switchView('uebersicht')">
+            <i class="fa-solid fa-house"></i>
+            Übersicht
+        </button>
+        <button class="nav-item" onclick="switchView('erfassen')">
+            <i class="fa-solid fa-pen-to-square"></i>
+            Zeit-Eintrag
+        </button>
+        <button class="nav-item" onclick="switchView('bearbeiten')">
+            <i class="fa-solid fa-box-archive"></i>
+            Bearbeiten
+        </button>
+        <button class="nav-item" onclick="switchView('lager')">
+            <i class="fa-solid fa-warehouse"></i>
+            Lager
+        </button>
+    </nav>
+
+    <script>
+        let packungenDaten = JSON.parse(localStorage.getItem('zig_packungen')) || [];
+        
+        let tabakLager = JSON.parse(localStorage.getItem('zig_tabak_lager')) || {
+            marke: 'Mein Tabak', gewicht: 150, preis: 30.00
+        };
+        
+        let huelsenLager = JSON.parse(localStorage.getItem('zig_huelsen_lager')) || {
+            gesamtAnzahl: 1000, preis: 2.00
+        };
+
+        const GRAMM_PRO_ZIGARETTE = 0.75;
+
+        function switchView(viewId) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            
+            document.getElementById(`view-${viewId}`).classList.add('active');
+            event.currentTarget.classList.add('active');
+
+            if(viewId === 'erfassen') {
+                setAktuelleZeitKorrektur();
+            }
+            if(viewId === 'bearbeiten') {
+                renderPackungsListe();
+            }
+            if(viewId === 'lager') {
+                loadLagerFormulare();
+            }
+            updateStatistiken();
+        }
+
+        function getAktuelleZeitString() {
+            const jetzt = new Date();
+            jetzt.setMinutes(jetzt.getMinutes() - jetzt.getTimezoneOffset());
+            return jetzt.toISOString().slice(0, 16);
+        }
+
+        function setAktuelleZeitKorrektur() {
+            if(packungenDaten.length > 0) {
+                document.getElementById('input-datetime').value = packungenDaten[packungenDaten.length - 1].zeitstempel;
+            } else {
+                document.getElementById('input-datetime').value = getAktuelleZeitString();
+            }
+        }
+
+        function loadLagerFormulare() {
+            document.getElementById('lager-tabak-marke').value = tabakLager.marke;
+            document.getElementById('lager-tabak-gewicht').value = tabakLager.gewicht;
+            document.getElementById('lager-tabak-preis').value = tabakLager.preis.toFixed(2);
+            document.getElementById('lager-huelsen-anzahl').value = huelsenLager.gesamtAnzahl;
+            document.getElementById('lager-huelsen-preis').value = huelsenLager.preis.toFixed(2);
+        }
+
+        function saveTabakLager() {
+            tabakLager.marke = document.getElementById('lager-tabak-marke').value;
+            tabakLager.gewicht = parseFloat(document.getElementById('lager-tabak-gewicht').value);
+            tabakLager.preis = parseFloat(document.getElementById('lager-tabak-preis').value);
+            localStorage.setItem('zig_tabak_lager', JSON.stringify(tabakLager));
+            alert('Tabakvorrat aktualisiert!');
+            updateStatistiken();
+        }
+
+        function saveHuelsenLager() {
+            huelsenLager.gesamtAnzahl = parseInt(document.getElementById('lager-huelsen-anzahl').value);
+            huelsenLager.preis = parseFloat(document.getElementById('lager-huelsen-preis').value);
+            localStorage.setItem('zig_huelsen_lager', JSON.stringify(huelsenLager));
+            alert('Hülsenvorrat aktualisiert!');
+            updateStatistiken();
+        }
+
+        // DASHBOARD SCHNELL-ERFASSUNG
+        document.getElementById('form-dash-packung').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const anzahl = parseInt(document.getElementById('dash-input-anzahl').value);
+            
+            const neuePackung = {
+                id: 'P' + Date.now(),
+                zeitstempel: getAktuelleZeitString(),
+                marke: tabakLager.marke,
+                anzahl: anzahl,
+                status: document.getElementById('dash-input-status').value
+            };
+
+            packungenDaten.push(neuePackung);
+            localStorage.setItem('zig_packungen', JSON.stringify(packungenDaten));
+            
+            document.getElementById('form-dash-packung').reset();
+            updateStatistiken();
+            alert('Menge blitzschnell erfasst!');
+        });
+
+        // MANUELLE ZEITKORREKTUR
+        document.getElementById('form-zeit-korrektur').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if(packungenDaten.length > 0) {
+                packungenDaten[packungenDaten.length - 1].zeitstempel = document.getElementById('input-datetime').value;
+                localStorage.setItem('zig_packungen', JSON.stringify(packungenDaten));
+                alert('Zeitpunkt erfolgreich korrigiert!');
+                switchView('uebersicht');
+            } else {
+                alert('Kein Eintrag zum Ändern vorhanden!');
+            }
+        });
+
+        function renderPackungsListe() {
+            const liste = document.getElementById('packungs-liste');
+            liste.innerHTML = '';
+
+            if(packungenDaten.length === 0) {
+                liste.innerHTML = '<p class="sub-text">Keine Packungen vorhanden.</p>';
+                return;
+            }
+
+            packungenDaten.forEach((packung, index) => {
+                const item = document.createElement('div');
+                item.className = 'packung-item';
+                item.innerHTML = `
+                    <div>
+                        <div style="font-weight: bold; font-size: 18px;">${packung.anzahl} Stück</div>
+                        <div class="sub-text">${packung.marke} - <span style="color: ${packung.status === 'Offen' ? 'var(--neon-green)' : '#fff'}">${packung.status}</span></div>
+                        <div class="sub-text" style="font-size: 11px;">${packung.zeitstempel.replace('T', ' ')}</div>
+                    </div>
+                    <div>
+                        <button onclick="addZigarettenToPackung(${index})" style="background:none; border:none; color:var(--neon-green); font-size: 22px; padding: 10px;">
+                            <i class="fa-solid fa-circle-plus"></i>
+                        </button>
+                    </div>
+                `;
+                liste.appendChild(item);
+            });
+        }
+
+        function addZigarettenToPackung(index) {
+            const extra = prompt("Wie viele Zigaretten manuell hinzufügen?", "20");
+            if (extra !== null && !isNaN(extra) && extra !== "") {
+                packungenDaten[index].anzahl += parseInt(extra);
+                localStorage.setItem('zig_packungen', JSON.stringify(packungenDaten));
+                renderPackungsListe();
+                updateStatistiken();
+            }
+        }
+
+        function updateStatistiken() {
+            const gesamtGestopft = packungenDaten.reduce((sum, p) => sum + p.anzahl, 0);
+            document.getElementById('dash-gesamt').innerText = gesamtGestopft.toLocaleString('de-DE');
+
+            const ersparnis = gesamtGestopft * 0.32;
+            document.getElementById('dash-ersparnis').innerText = ersparnis.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+
+            const verbrauchtesGramm = gesamtGestopft * GRAMM_PRO_ZIGARETTE;
+            const restTabak = Math.max(0, tabakLager.gewicht - verbrauchtesGramm);
+            const restHuelsen = Math.max(0, huelsenLager.gesamtAnzahl - gesamtGestopft);
+
+            document.getElementById('dash-tabak').innerText = Math.round(restTabak) + "g";
+            document.getElementById('dash-huelsen').innerText = restHuelsen.toLocaleString('de-DE');
+
+            const tabakStatusText = document.getElementById('dash-tabak-status');
+            if(restTabak < 20) {
+                tabakStatusText.innerText = "Fast leer!";
+                tabakStatusText.classList.add('status-warn');
+            } else {
+                tabakStatusText.innerText = "Bereit";
+                tabakStatusText.classList.remove('status-warn');
+            }
+
+            const huelsenStatusText = document.getElementById('dash-huelsen-status');
+            if(restHuelsen < 100) {
+                huelsenStatusText.innerText = "Knapp!";
+                huelsenStatusText.classList.add('status-warn');
+            } else {
+                huelsenStatusText.innerText = "Genug da";
+                huelsenStatusText.classList.remove('status-warn');
+            }
+
+            if(packungenDaten.length > 0) {
+                const letzte = packungenDaten[packungenDaten.length - 1];
+                const zeitTeile = letzte.zeitstempel.split('T');
+                document.getElementById('dash-letzte-aktivitaet').innerText = 
+                    `+${letzte.anzahl} Stück am ${zeitTeile[0]} (${zeitTeile[1] || ''})`;
+            }
+        }
+
+        updateStatistiken();
+    </script>
+</body>
+</html>
